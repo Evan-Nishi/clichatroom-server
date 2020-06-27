@@ -1,10 +1,13 @@
-import { Schema, model } from 'mongoose'
+import { Schema } from 'mongoose'
 
-
-export const userSchema: Schema = new Schema({
+const userSchema: Schema = new Schema({
     username: {type: String, required: true, unique: true},
     password: {type: String, required: true},
     email: {type: String, required: false}
 })
 
-export const userModel = model('user', userSchema)
+/*userSchema.pre('save', {
+    
+})
+*/
+export default userSchema
