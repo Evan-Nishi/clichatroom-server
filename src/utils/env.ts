@@ -12,3 +12,5 @@ switch(process.env.NODE_ENV){
 
 
 export const MONGO_URL = process.env.MONGO_URL
+export const EMAIL = process.env.EMAIL
+export const EMAIL_PASS = process.env.EMAIL_PASS

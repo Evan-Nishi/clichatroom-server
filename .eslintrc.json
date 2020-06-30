@@ -35,6 +35,9 @@
         "semi": [
             "error",
             "never"
+        ],
+        "prefer-const": [
+            "off"
         ]
     }
 }

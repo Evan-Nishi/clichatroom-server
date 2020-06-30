@@ -1,48 +1,48 @@
 import { MONGO_URL } from './utils/env'
 import { connect, model } from 'mongoose'
-import { validateEmail } from './middlewares/validator'
+import { validateEmail } from './utils/validate'
+import { limiter, createLimiter } from './utils/rateLimiter'
 
 import userSchema from './schemas/user'
-import messageSchema from './schemas/message'
 import chatroomSchema from './schemas/chatroom'
+//import messageSchema from './schemas/message'
 
+//import nodemailer from 'nodemailer'
 import express from 'express'
 import helmet from 'helmet'
-import rateLimit from 'express-rate-limit'
 
-const app: express.Application = express()
+
+const User = model('User', userSchema)
+const Chatroom = model('Chatroom', chatroomSchema)
+//const Message = model('Message', messageSchema)
+
+const app = express()
 
 app.set('trust proxy', true)
 app.use(helmet)
 app.use(express.json())
-
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 100
-})
-
-const User = model('User', userSchema)
-const Message = model('Message', messageSchema)
-const Chatroom = model('Chatroom', chatroomSchema)
+app.use(limiter)
 
 connect(MONGO_URL,{useNewUrlParser: true, useUnifiedTopology: true})
     .catch((error) => console.log(error))
 
-app.get('/', function(req, res) {
-    res.send('whoa I alive') 
+app.get('/', (req, res) => {
+    res.send('whoa I alive')
 })
 
-app.post('/new_user', (req, res) => {
-    if(!validateEmail(req.body.email) && req.body.email != undefined){
-        res.send('invalid email')
-    }
+app.post('/new_user', createLimiter, (req, res) => {
     let user = new User({
         username: req.body.name,
         email: req.body.name,
         password: req.body.password
     })
+
+    if(!validateEmail(req.body.email) && req.body.email != undefined){
+        res.send('invalid email')
+    }
+
     user.save() // handle errors later
-    res.sendStatus(201);
+    res.sendStatus(201)
 })
 
 app.post('/new_chatroom', (req, res) => {
@@ -52,7 +52,7 @@ app.post('/new_chatroom', (req, res) => {
         members: req.body.userId
     })
     chatroom.save() // handle errors later
-    res.sendStatus(201);
+    res.sendStatus(201)
 })
 
 app.listen(3000, function() {
