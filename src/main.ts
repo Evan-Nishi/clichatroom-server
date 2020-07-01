@@ -2,12 +2,11 @@ import { MONGO_URL } from './utils/env'
 import { connect, model } from 'mongoose'
 import { validateEmail } from './utils/validate'
 import { limiter, createLimiter } from './utils/rateLimiter'
-
+import { randomBytes } from 'crypto'
 import userSchema from './schemas/user'
 import chatroomSchema from './schemas/chatroom'
 //import messageSchema from './schemas/message'
 
-//import nodemailer from 'nodemailer'
 import express from 'express'
 import helmet from 'helmet'
 
@@ -37,7 +36,7 @@ app.post('/new_user', createLimiter, (req, res) => {
         password: req.body.password
     })
 
-    if(!validateEmail(req.body.email) && req.body.email != undefined){
+    if(!validateEmail(req.body.email) && req.body.email != undefined) {
         res.send('invalid email')
     }
 
@@ -45,7 +44,18 @@ app.post('/new_user', createLimiter, (req, res) => {
     res.sendStatus(201)
 })
 
-app.post('/new_chatroom', (req, res) => {
+app.post('/verify_email', createLimiter, (req, res) => {
+    let pin: string
+    randomBytes(3, (err, buffer) => {
+        if(err) {
+            console.log(err)
+        } else {
+            pin = parseInt(buffer.toString('hex'), 16).toString().substr(0,6)
+        }
+    })
+})
+
+app.post('/new_chatroom', createLimiter, (req, res) => {
     let chatroom = new Chatroom({
         messages:[],
         joinpass: req.body.joinpass,
@@ -55,18 +65,6 @@ app.post('/new_chatroom', (req, res) => {
     res.sendStatus(201)
 })
 
-app.listen(3000, function() {
+app.listen(3000, () => {
     console.log('listening on port 3000')
 })
-
-
-/*import Hasher from './middlewares/hash'
-
-Hasher('hi', 10, (err, hash) => {
-    if(err) {
-        throw err
-    } else {
-        console.log(hash)
-    }
-})
-*/
