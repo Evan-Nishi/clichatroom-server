@@ -1,18 +1,15 @@
 import { MONGO_URL } from './utils/env'
-import { connect, model } from 'mongoose'
+import { connect } from 'mongoose'
 import { validateEmail } from './utils/validate'
 import { limiter, createLimiter } from './utils/rateLimiter'
 import { randomBytes } from 'crypto'
-import userSchema from './schemas/user'
-import chatroomSchema from './schemas/chatroom'
+
+import User from './schemas/user'
+import Chatroom from './schemas/chatroom'
 //import messageSchema from './schemas/message'
 
 import express from 'express'
 import helmet from 'helmet'
-
-
-const User = model('User', userSchema)
-const Chatroom = model('Chatroom', chatroomSchema)
 //const Message = model('Message', messageSchema)
 
 const app = express()

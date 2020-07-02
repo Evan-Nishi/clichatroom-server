@@ -1,15 +1,21 @@
-import { Schema } from 'mongoose'
+import { Schema, Document, model } from 'mongoose'
 import Hasher from '../middlewares/hash'
 
-const userSchema: Schema = new Schema({
+export interface IUser extends Document {
+    username: string
+    password: string
+    email: string
+    isVerfified: boolean
+}
+
+export const userSchema: Schema = new Schema({
     username: {type: String, required: true, unique: true},
     password: {type: String, required: true},
     email: {type: String, required: true},
     isVerified: {type: Boolean, default: false}
 })
 
-//cannot use arrow operator for callback due to this being needed
-userSchema.pre('save', function(next) {
+userSchema.pre('save', function(this: IUser, next: any) {
     if(!this.isModified()){
         return next()
     }
@@ -22,7 +28,9 @@ userSchema.pre('save', function(next) {
         }
     })
 })
-export default userSchema
+
+const User = model<IUser>('User', userSchema)
+export default User
 
 /*import Hasher from './middlewares/hash'
 

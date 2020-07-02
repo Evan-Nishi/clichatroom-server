@@ -6,5 +6,4 @@ import bcrypt from 'bcrypt'
 let router = express.Router()
 
 router.post('/login', (req, res) => {
-    
 })
