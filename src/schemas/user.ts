@@ -15,6 +15,7 @@ export const userSchema: Schema = new Schema({
     isVerified: {type: Boolean, default: false}
 })
 
+//not using arrow functions because we use this
 userSchema.pre('save', function(this: IUser, next: any) {
     if(!this.isModified()){
         return next()
@@ -29,6 +30,9 @@ userSchema.pre('save', function(this: IUser, next: any) {
     })
 })
 
+userSchema.methods.comparePassword = function(candidatePass, cb){
+    
+}
 const User = model<IUser>('User', userSchema)
 export default User
 

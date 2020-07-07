@@ -19,11 +19,12 @@ export function validateEmail( email: string ) {
 }
 /** 
  * Verfy email function
+ * @async
  * @param {string} sendTo - email to send verification to
  * @param {string} userName - the account's username
  * @param {string} pin - the one time verification pin 
 */
-export function verifyEmail( sendTo: string, userName: string, pin: string ) {
+export async function verifyEmail( sendTo: string, userName: string, pin: string ) {
     const mailConfig = {
         from: EMAIL,
         to: sendTo,
