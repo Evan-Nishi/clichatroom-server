@@ -23,7 +23,7 @@ chatroomSchema.pre('save', function(this: IChatroom, next: any){
     }
     Hasher(this.joinPass, 10, (err, hash) => {
         if(err) {
-            console.log(err)
+            throw(err)
         } else {
             this.joinPass = hash
             next()

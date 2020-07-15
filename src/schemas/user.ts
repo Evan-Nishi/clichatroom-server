@@ -1,4 +1,5 @@
 import { Schema, Document, model } from 'mongoose'
+import bcrypt from 'bcrypt'
 import Hasher from '../middlewares/hash'
 
 export interface IUser extends Document {
@@ -6,13 +7,15 @@ export interface IUser extends Document {
     password: string
     email: string
     isVerfified: boolean
+    pin: string
 }
 
 export const userSchema: Schema = new Schema({
     username: {type: String, required: true, unique: true},
     password: {type: String, required: true},
     email: {type: String, required: true},
-    isVerified: {type: Boolean, default: false}
+    isVerified: {type: Boolean, default: false},
+    pin: {type: String}
 })
 
 //not using arrow functions because we use this
@@ -30,8 +33,11 @@ userSchema.pre('save', function(this: IUser, next: any) {
     })
 })
 
-userSchema.methods.comparePassword = function(candidatePass, cb){
-    
+userSchema.methods.comparePassword = function(candidatePassword, cb){
+    bcrypt.compare(candidatePassword, this.password, function(err, isMatch) {
+        if(err) return cb(err)
+        cb(null, isMatch)
+    })
 }
 const User = model<IUser>('User', userSchema)
 export default User
