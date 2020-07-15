@@ -1,6 +1,6 @@
 import { MONGO_URL } from './utils/env'
 import { connect } from 'mongoose'
-import { validateEmail, verifyEmail } from './utils/validate'
+import { validateEmail, sendVerificationEmail } from './utils/validate'
 import { limiter, createLimiter } from './utils/rateLimiter'
 import { randomBytes } from 'crypto'
 
@@ -19,7 +19,7 @@ app.use(limiter)
 
 
 connect(MONGO_URL,{useNewUrlParser: true, useUnifiedTopology: true})
-    .catch((error) => console.log(error))
+    .catch((error) => {throw(error)})
 
 app.get('/', (req, res) => {
     res.send('whoa I alive')
@@ -54,37 +54,65 @@ app.post('/new_user', createLimiter, (req, res) => {
             }
         
             newUser.save((error) => {
-                console.log(error) 
-            }) // handle errors later
+                throw(error)
+            })
+
             res.sendStatus(201)
         }
-
     })
-
 })
 
 /**
  * sends a verification email
  * 
- * @name verify_email
- * @route {POST} - /verify_email
- * @authentication - this route doesn't require anything but is rate limited
- * @bodyparam {String} email - the user's email
- * @bodyparam {String} username - the new user's name
+ * @name send_verify_email
+ * @route {POST} - /send_verify_email
+ * @authentication - route doesn't require anything but is rate limited extra
+ * @bodyparam - userId - the users ID
  */
 
-app.post('/verify_email', createLimiter, (req, res) => {
+app.post('/send_verify_email', createLimiter, async (req, res) => {
     let pin: string
-    randomBytes(3, async (err, buffer) => {
-        if(err) {
-            console.log(err)
-            res.send(err)
-        } else {
-            pin = parseInt(buffer.toString('hex'), 16).toString().substr(0,6)
-            await verifyEmail(req.body.email, req.body.username, pin)
-            res.send('email verified')
-        }
-    })
+    let user = await User.findById(req.body.userId)
+    if(!user.isVerfified){
+        randomBytes(3, async (err, buffer) => {
+            if(err) {
+                res.sendStatus(500)
+                throw(err)
+            } else {
+                pin = parseInt(buffer.toString('hex'), 16).toString().substr(0,6)
+                await sendVerificationEmail(req.body.email, req.body.username, pin)
+                user.pin = pin
+                user.save()
+                    .catch((err) => {throw err})
+                res.sendStatus(200)
+            }
+        })
+    } else {
+        res.send('user already verified')
+    }
+})
+
+/**
+ * recieves and checks PIN for email verification
+ * 
+ * @name verify_email
+ * @route {POST} - /verify_email
+ * @authentication - no authentication required
+ * @bodyparam {String} - userId - the user's ID
+ */
+app.post('/verify_email', createLimiter, async (req, res) => {
+    let user = await User.findById(req.body.userId)
+    if(req.body.PIN == user.pin){
+        res.sendStatus(200)
+        user.isVerfified = true
+        user.pin = undefined
+        user.save()
+            .catch((error) => {throw error})
+    } else {
+        res.status(400)
+        res.send('invalid PIN')
+    }
 })
 
 /**
@@ -93,18 +121,27 @@ app.post('/verify_email', createLimiter, (req, res) => {
  * @name new_chatroom
  * @route {POST} - /new_chatroom
  * @authentication - this route requires the user to be logged into a session
- * @bodyparam {String} joinpass - 
- * @bodyparam {String} username - the new user's name
+ * @bodyparam {String} joinpass - the joinpassword for the chatroom
+ * @bodyparam {String} userId - the user's ID
  */
 
-app.post('/new_chatroom', createLimiter, (req, res) => {
+app.post('/new_chatroom', createLimiter, async (req, res) => {
+    let user = await User.findById(req.body.userId)
+    
     let chatroom = new Chatroom({
         messages:[],
         joinpass: req.body.joinpass,
         members: req.body.userId
     })
-    chatroom.save() // handle errors later
-    res.sendStatus(201)
+
+    if(user.isVerfified){
+        chatroom.save()
+            .catch((error) => {throw error})
+        res.sendStatus(201)
+    } else {
+        res.status(401)
+        res.send('account not verfied')
+    }
 })
 
 app.listen(3000, () => {

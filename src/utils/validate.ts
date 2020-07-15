@@ -24,7 +24,7 @@ export function validateEmail( email: string ) {
  * @param {string} userName - the account's username
  * @param {string} pin - the one time verification pin 
 */
-export async function verifyEmail( sendTo: string, userName: string, pin: string ) {
+export async function sendVerificationEmail( sendTo: string, userName: string, pin: string ) {
     const mailConfig = {
         from: EMAIL,
         to: sendTo,
